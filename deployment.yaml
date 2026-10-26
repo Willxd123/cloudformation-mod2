@@ -1,9 +1,7 @@
-# Git sync vigila este archivo en la rama configurada.
-# Cambiar las revisiones actualiza etiquetas, sin cambiar la AMI ni user_data.
 template-file-path: main.git-sync.yaml
 parameters:
+  BackendRevision: inicial
   ImageId: ami-02a9cdd4e98bc3c78
   InstanceType: t3.micro
-  BackendRevision: inicial
   FrontendRevision: inicial
 tags: {}
