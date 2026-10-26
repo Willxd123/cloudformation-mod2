@@ -7,6 +7,12 @@ Resources:
   # Rango distinto de Terraform y Pulumi. No reutilizar recursos de esos estados.
   Vpc:
     Type: AWS::EC2::VPC
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Red aislada para los stacks anidados de este laboratorio.
+        must:
+          - Mantener frontend publico y backend sin IP publica ni NAT.
+          - No reutilizar recursos administrados por Terraform o Pulumi.
     Properties:
       CidrBlock: 10.60.0.0/16
       EnableDnsSupport: true

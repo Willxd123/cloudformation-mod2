@@ -35,13 +35,13 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: 
-        https://s3.us-east-1.amazonaws.com/practico5-templates-templatesbucket-ooxefdxmh7vz/nested/f1b8cf63b3115c6fbe4b41f4af3954b6.template
+        https://s3.us-east-1.amazonaws.com/practico5-templates-templatesbucket-ooxefdxmh7vz/nested/8ca8505fb5ee5e5504389f342910232b.template
       TimeoutInMinutes: 15
   Security:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: 
-        https://s3.us-east-1.amazonaws.com/practico5-templates-templatesbucket-ooxefdxmh7vz/nested/6833f4f7f89e4c59ea3435ccee34910d.template
+        https://s3.us-east-1.amazonaws.com/practico5-templates-templatesbucket-ooxefdxmh7vz/nested/cb35b1eaa5be263038e83dd9b5ce00cb.template
       TimeoutInMinutes: 15
       Parameters:
         VpcId:

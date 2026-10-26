@@ -10,6 +10,11 @@ Resources:
   # HTTP publico es deliberado para una pagina de laboratorio sin credenciales.
   FrontendSecurityGroup:
     Type: AWS::EC2::SecurityGroup
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Entrada HTTP publica solo para la pagina de prueba sin credenciales.
+        must:
+          - Mantener SSH cerrado y no publicar datos sensibles por HTTP.
     Properties:
       GroupDescription: HTTP publico y salida para instalar Nginx
       VpcId: !Ref VpcId
