@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Dos EC2 de demostracion; frontend Nginx publico y backend Python privado sin dependencias externas.
+Description: Frontend publico, backend privado y EC2 adicionales para demostrar cambios colaborativos con Git sync.
 Metadata:
   AWSToolsMetrics:
     AWSAgentToolkit: aws-cloudformation@3
@@ -96,6 +96,29 @@ Resources:
           nginx -t
           systemctl enable nginx
           systemctl restart nginx
+  # Integrante A: agregar esta EC2 al mismo stack, sin modificar las existentes.
+  # Reutiliza red y firewall privados; no abre puertos ni instala aplicaciones.
+  PruebaIntegranteA:
+    Type: AWS::EC2::Instance
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Demostrar creacion colaborativa de un recurso mediante Git sync.
+        must:
+          - Conservar Backend y Frontend al incorporar cambios del integrante B.
+          - Mantener esta instancia privada y usar logical IDs distintos para nuevas EC2.
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: t3.micro
+      SubnetId: !Ref PrivateSubnetId
+      SecurityGroupIds: [!Ref BackendSecurityGroupId]
+      MetadataOptions: {HttpTokens: required, HttpEndpoint: enabled}
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs: {VolumeSize: 8, VolumeType: gp3, Encrypted: true, DeleteOnTermination: true}
+      Tags:
+        - {Key: Name, Value: !Sub '${NamePrefix}-prueba-a'}
+        - {Key: Integrante, Value: A}
+        - {Key: ManagedBy, Value: CloudFormation}
 Outputs:
   FrontendUrl:
     Description: URL HTTP de laboratorio, sin login ni informacion sensible.
@@ -109,3 +132,6 @@ Outputs:
   BackendPrivateIp:
     Description: Direccion interna usada por el proxy Nginx.
     Value: !GetAtt Backend.PrivateIp
+  PruebaIntegranteAId:
+    Description: Nueva EC2 privada agregada por el integrante A.
+    Value: !Ref PruebaIntegranteA
