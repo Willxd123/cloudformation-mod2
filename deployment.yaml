@@ -3,5 +3,5 @@ parameters:
   BackendRevision: integrante-a
   ImageId: ami-02a9cdd4e98bc3c78
   InstanceType: t3.micro
-  FrontendRevision: inicial
+  FrontendRevision: integrante-b
 tags: {}
