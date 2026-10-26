@@ -1,0 +1,23 @@
+#cloud-config
+# Python 3 esta disponible en Ubuntu. Sin instalar paquetes ni requerir Internet.
+write_files:
+  - path: /opt/practico5/index.html
+    permissions: '0644'
+    content: |
+      <h1>Servidor privado aprovisionado con Bicep - Practico 5</h1>
+  - path: /etc/systemd/system/practico5.service
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=Web privada de demostracion Bicep
+      After=network.target
+      [Service]
+      User=nobody
+      WorkingDirectory=/opt/practico5
+      ExecStart=/usr/bin/python3 -m http.server 8080 --bind 0.0.0.0
+      Restart=always
+      [Install]
+      WantedBy=multi-user.target
+runcmd:
+  - [systemctl, daemon-reload]
+  - [systemctl, enable, --now, practico5]

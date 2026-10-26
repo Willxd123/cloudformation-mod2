@@ -1,0 +1,3 @@
+# Parser usado por scripts/check_templates.py; instalar en una .venv local.
+PyYAML==6.0.3
+cfn-lint==1.57.2

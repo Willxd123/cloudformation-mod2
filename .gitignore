@@ -1,0 +1,12 @@
+.build/
+.venv/
+__pycache__/
+*.pyc
+*.pem
+*.key
+.env
+.env.*
+parameters.local.json
+azure/*.local.bicepparam
+azure/*.json
+!azure/*example.json

@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Dos EC2 de demostracion; frontend Nginx publico y backend Python privado sin dependencias externas.
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@3
+Parameters:
+  PublicSubnetId: {Type: 'AWS::EC2::Subnet::Id'}
+  PrivateSubnetId: {Type: 'AWS::EC2::Subnet::Id'}
+  FrontendSecurityGroupId: {Type: 'AWS::EC2::SecurityGroup::Id'}
+  BackendSecurityGroupId: {Type: 'AWS::EC2::SecurityGroup::Id'}
+  ImageId: {Type: 'AWS::EC2::Image::Id'}
+  InstanceType:
+    Type: String
+    AllowedValues: [t3.micro, t3.small]
+  NamePrefix:
+    Type: String
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9-]{0,127}'
+  BackendRevision:
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9-]{1,40}'
+  FrontendRevision:
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9-]{1,40}'
+Resources:
+  # Python 3 viene en la imagen Ubuntu elegida; no instalar paquetes desde esta
+  # subred privada. No se despliega Django ni PostgreSQL en este ejemplo.
+  Backend:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref PrivateSubnetId
+      SecurityGroupIds: [!Ref BackendSecurityGroupId]
+      MetadataOptions: {HttpTokens: required, HttpEndpoint: enabled}
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs: {VolumeSize: 8, VolumeType: gp3, Encrypted: true, DeleteOnTermination: true}
+      Tags:
+        - {Key: Name, Value: !Sub '${NamePrefix}-backend'}
+        - {Key: Revision, Value: !Ref BackendRevision}
+        - {Key: ManagedBy, Value: CloudFormation}
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          set -eu
+          command -v python3
+          install -d -o nobody -g nogroup /opt/demo
+          printf '%s\n' '<h1>Backend privado - CloudFormation anidado</h1>' > /opt/demo/index.html
+          cat > /etc/systemd/system/demo-backend.service <<'SERVICE'
+          [Unit]
+          Description=Backend privado de demostracion
+          After=network.target
+          [Service]
+          User=nobody
+          Group=nogroup
+          WorkingDirectory=/opt/demo
+          ExecStart=/usr/bin/python3 -m http.server 8080 --bind 0.0.0.0
+          Restart=always
+          [Install]
+          WantedBy=multi-user.target
+          SERVICE
+          systemctl daemon-reload
+          systemctl enable --now demo-backend
+  Frontend:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref PublicSubnetId
+      SecurityGroupIds: [!Ref FrontendSecurityGroupId]
+      MetadataOptions: {HttpTokens: required, HttpEndpoint: enabled}
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs: {VolumeSize: 8, VolumeType: gp3, Encrypted: true, DeleteOnTermination: true}
+      Tags:
+        - {Key: Name, Value: !Sub '${NamePrefix}-frontend'}
+        - {Key: Revision, Value: !Ref FrontendRevision}
+        - {Key: ManagedBy, Value: CloudFormation}
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -eu
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install -y nginx
+          printf '%s\n' '<h1>Frontend - CloudFormation</h1><a href="/backend/">Probar backend privado</a>' > /var/www/html/index.html
+          cat > /etc/nginx/sites-available/default <<'NGINX'
+          server {
+            listen 80 default_server;
+            root /var/www/html;
+            location /backend/ {
+              proxy_pass http://${Backend.PrivateIp}:8080/;
+            }
+          }
+          NGINX
+          nginx -t
+          systemctl enable nginx
+          systemctl restart nginx
+Outputs:
+  FrontendUrl:
+    Description: URL HTTP de laboratorio, sin login ni informacion sensible.
+    Value: !Sub 'http://${Frontend.PublicIp}'
+  BackendId:
+    Description: EC2 backend privada.
+    Value: !Ref Backend
+  FrontendId:
+    Description: EC2 frontend publica.
+    Value: !Ref Frontend
+  BackendPrivateIp:
+    Description: Direccion interna usada por el proxy Nginx.
+    Value: !GetAtt Backend.PrivateIp

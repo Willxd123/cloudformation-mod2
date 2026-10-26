@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Frontend permite HTTP publico; backend solo permite 8080 desde frontend; SSH cerrado.
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@3
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+Resources:
+  # HTTP publico es deliberado para una pagina de laboratorio sin credenciales.
+  FrontendSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: HTTP publico y salida para instalar Nginx
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          CidrIp: 0.0.0.0/0
+  BackendSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Backend privado solo desde frontend
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: !Ref FrontendSecurityGroup
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          CidrIp: 10.60.0.0/16
+Outputs:
+  FrontendSecurityGroupId:
+    Description: Grupo para la instancia publica.
+    Value: !GetAtt FrontendSecurityGroup.GroupId
+  BackendSecurityGroupId:
+    Description: Grupo para el servidor privado.
+    Value: !GetAtt BackendSecurityGroup.GroupId

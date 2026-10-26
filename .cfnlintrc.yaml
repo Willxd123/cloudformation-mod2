@@ -1,0 +1,6 @@
+templates:
+  - bootstrap.yaml
+  - main.yaml
+  - templates/*.yaml
+regions:
+  - us-east-1

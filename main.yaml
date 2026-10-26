@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Practico 5 - stack raiz con red, seguridad y dos servidores anidados, independiente de Terraform.
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@3
+  com.aws.cloudformation.Context:
+    ref: [README.md]
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    AllowedValues: [t3.micro, t3.small]
+  ImageId:
+    Type: AWS::EC2::Image::Id
+    Default: ami-02a9cdd4e98bc3c78
+    Description: Ubuntu 24.04 amd64 usada previamente en us-east-1; verificar antes de desplegar. Se fija para no reemplazar VM al cambiar etiquetas.
+  BackendRevision:
+    Type: String
+    Default: inicial
+    AllowedPattern: '[a-zA-Z0-9-]{1,40}'
+    Description: Integrante A modifica este valor; solo cambia una etiqueta.
+  FrontendRevision:
+    Type: String
+    Default: inicial
+    AllowedPattern: '[a-zA-Z0-9-]{1,40}'
+    Description: Integrante B modifica este valor despues de incorporar el cambio A.
+Resources:
+  # CloudFormation package reemplaza rutas locales por URLs privadas de S3.
+  Network:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: templates/red.yaml
+      TimeoutInMinutes: 15
+  Security:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: templates/seguridad.yaml
+      TimeoutInMinutes: 15
+      Parameters:
+        VpcId: !GetAtt Network.Outputs.VpcId
+  Servers:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: templates/servidores.yaml
+      TimeoutInMinutes: 20
+      Parameters:
+        PublicSubnetId: !GetAtt Network.Outputs.PublicSubnetId
+        PrivateSubnetId: !GetAtt Network.Outputs.PrivateSubnetId
+        FrontendSecurityGroupId: !GetAtt Security.Outputs.FrontendSecurityGroupId
+        BackendSecurityGroupId: !GetAtt Security.Outputs.BackendSecurityGroupId
+        ImageId: !Ref ImageId
+        InstanceType: !Ref InstanceType
+        NamePrefix: !Ref AWS::StackName
+        BackendRevision: !Ref BackendRevision
+        FrontendRevision: !Ref FrontendRevision
+Outputs:
+  FrontendUrl:
+    Description: Web de prueba HTTP; /backend/ permite comprobar el segundo servidor.
+    Value: !GetAtt Servers.Outputs.FrontendUrl
+  BackendId:
+    Description: Identificador de la EC2 privada.
+    Value: !GetAtt Servers.Outputs.BackendId
+  FrontendId:
+    Description: Identificador de la EC2 publica.
+    Value: !GetAtt Servers.Outputs.FrontendId
+  BackendPrivateIp:
+    Description: Direccion del servidor privado; no tiene IP publica.
+    Value: !GetAtt Servers.Outputs.BackendPrivateIp

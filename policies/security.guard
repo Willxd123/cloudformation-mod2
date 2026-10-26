@@ -1,0 +1,15 @@
+# Reglas locales: ejecutar despues de validar el esquema con cfn-lint.
+let instances = Resources.*[ Type == "AWS::EC2::Instance" ]
+rule encrypted_ec2 when %instances !empty {
+  %instances.Properties.BlockDeviceMappings[*].Ebs.Encrypted == true
+  %instances.Properties.MetadataOptions.HttpTokens == "required"
+}
+let buckets = Resources.*[ Type == "AWS::S3::Bucket" ]
+rule private_buckets when %buckets !empty {
+  %buckets.Properties.PublicAccessBlockConfiguration.BlockPublicAcls == true
+  %buckets.Properties.PublicAccessBlockConfiguration.BlockPublicPolicy == true
+  %buckets.Properties.PublicAccessBlockConfiguration.IgnorePublicAcls == true
+  %buckets.Properties.PublicAccessBlockConfiguration.RestrictPublicBuckets == true
+  %buckets.Properties.BucketEncryption exists
+  %buckets.Properties.VersioningConfiguration.Status == "Enabled"
+}

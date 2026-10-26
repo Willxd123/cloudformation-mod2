@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Bucket privado para publicar templates anidados; conservar al retirar los servidores.
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@3
+Resources:
+  # Retener templates permite revisar despliegues anteriores. Limpieza manual
+  # de objetos y versiones si al terminar el curso se decide eliminar el bucket.
+  TemplatesBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: {SSEAlgorithm: AES256}
+      VersioningConfiguration: {Status: Enabled}
+  HttpsOnly:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TemplatesBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !GetAtt TemplatesBucket.Arn
+              - !Sub '${TemplatesBucket.Arn}/*'
+            Condition:
+              Bool: {aws:SecureTransport: 'false'}
+Outputs:
+  BucketName:
+    Description: Usar como TemplatesBucket en scripts/stack.ps1.
+    Value: !Ref TemplatesBucket

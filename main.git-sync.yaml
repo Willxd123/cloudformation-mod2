@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Practico 5 - stack raiz con red, seguridad y dos servidores 
+  anidados, independiente de Terraform.
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@3
+  com.aws.cloudformation.Context:
+    ref:
+    - README.md
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+    - t3.micro
+    - t3.small
+  ImageId:
+    Type: AWS::EC2::Image::Id
+    Default: ami-02a9cdd4e98bc3c78
+    Description: Ubuntu 24.04 amd64 usada previamente en us-east-1; verificar 
+      antes de desplegar. Se fija para no reemplazar VM al cambiar etiquetas.
+  BackendRevision:
+    Type: String
+    Default: inicial
+    AllowedPattern: '[a-zA-Z0-9-]{1,40}'
+    Description: Integrante A modifica este valor; solo cambia una etiqueta.
+  FrontendRevision:
+    Type: String
+    Default: inicial
+    AllowedPattern: '[a-zA-Z0-9-]{1,40}'
+    Description: Integrante B modifica este valor despues de incorporar el 
+      cambio A.
+Resources:
+  Network:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: 
+        https://s3.us-east-1.amazonaws.com/practico5-templates-templatesbucket-ooxefdxmh7vz/nested/f1b8cf63b3115c6fbe4b41f4af3954b6.template
+      TimeoutInMinutes: 15
+  Security:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: 
+        https://s3.us-east-1.amazonaws.com/practico5-templates-templatesbucket-ooxefdxmh7vz/nested/6833f4f7f89e4c59ea3435ccee34910d.template
+      TimeoutInMinutes: 15
+      Parameters:
+        VpcId:
+          Fn::GetAtt:
+          - Network
+          - Outputs.VpcId
+  Servers:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: 
+        https://s3.us-east-1.amazonaws.com/practico5-templates-templatesbucket-ooxefdxmh7vz/nested/c5cee1765d780dd00ce68bc421c2ec33.template
+      TimeoutInMinutes: 20
+      Parameters:
+        PublicSubnetId:
+          Fn::GetAtt:
+          - Network
+          - Outputs.PublicSubnetId
+        PrivateSubnetId:
+          Fn::GetAtt:
+          - Network
+          - Outputs.PrivateSubnetId
+        FrontendSecurityGroupId:
+          Fn::GetAtt:
+          - Security
+          - Outputs.FrontendSecurityGroupId
+        BackendSecurityGroupId:
+          Fn::GetAtt:
+          - Security
+          - Outputs.BackendSecurityGroupId
+        ImageId:
+          Ref: ImageId
+        InstanceType:
+          Ref: InstanceType
+        NamePrefix:
+          Ref: AWS::StackName
+        BackendRevision:
+          Ref: BackendRevision
+        FrontendRevision:
+          Ref: FrontendRevision
+Outputs:
+  FrontendUrl:
+    Description: Web de prueba HTTP; /backend/ permite comprobar el segundo 
+      servidor.
+    Value:
+      Fn::GetAtt:
+      - Servers
+      - Outputs.FrontendUrl
+  BackendId:
+    Description: Identificador de la EC2 privada.
+    Value:
+      Fn::GetAtt:
+      - Servers
+      - Outputs.BackendId
+  FrontendId:
+    Description: Identificador de la EC2 publica.
+    Value:
+      Fn::GetAtt:
+      - Servers
+      - Outputs.FrontendId
+  BackendPrivateIp:
+    Description: Direccion del servidor privado; no tiene IP publica.
+    Value:
+      Fn::GetAtt:
+      - Servers
+      - Outputs.BackendPrivateIp
