@@ -52,7 +52,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: 
-        https://s3.us-east-1.amazonaws.com/practico5-templates-templatesbucket-ooxefdxmh7vz/nested/f8adc11b1d4342ee9bfaca1f6c6e5334.template
+        https://s3.us-east-1.amazonaws.com/practico5-templates-templatesbucket-ooxefdxmh7vz/nested/3fc6014a97f45abceab8668db8fd6e58.template
       TimeoutInMinutes: 20
       Parameters:
         PublicSubnetId:
