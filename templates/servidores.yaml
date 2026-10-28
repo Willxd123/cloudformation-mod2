@@ -120,60 +120,8 @@ Resources:
         - {Key: Integrante, Value: A}
         - {Key: ManagedBy, Value: CloudFormation}
 
-  IntegracionC:
-    Type: AWS::EC2::Instance
-    Properties:
-      ImageId: !Ref ImageId
-      InstanceType: t3.micro
-      SubnetId: !Ref PrivateSubnetId
-      SecurityGroupIds: [!Ref BackendSecurityGroupId]
-      MetadataOptions: {HttpTokens: required, HttpEndpoint: enabled}
-      BlockDeviceMappings:
-        - DeviceName: /dev/sda1
-          Ebs:
-            VolumeSize: 8
-            VolumeType: gp3
-            Encrypted: true
-            DeleteOnTermination: true
-      Tags:
-        - Key: Name
-          Value: !Sub '${NamePrefix}-integracion-c'
-        - Key: Integrante
-          Value: C
-        - Key: ManagedBy
-          Value: CloudFormation
 
-  # Integrante B: agrega otra EC2 sin eliminar la instancia de A.
-  # Usa la misma red privada y el mismo grupo de seguridad existente.
-  PruebaIntegranteB:
-    Type: AWS::EC2::Instance
-    Metadata:
-      com.aws.cloudformation.Context:
-        why: Demostrar la incorporacion de un segundo cambio colaborativo.
-        must:
-          - Conservar PruebaIntegranteA, Backend y Frontend.
-          - Usar un logical ID diferente al de A.
-          - Mantener la instancia privada y sin puertos nuevos.
-    Properties:
-      ImageId: !Ref ImageId
-      InstanceType: t3.micro
-      SubnetId: !Ref PrivateSubnetId
-      SecurityGroupIds: [!Ref BackendSecurityGroupId]
-      MetadataOptions: {HttpTokens: required, HttpEndpoint: enabled}
-      BlockDeviceMappings:
-        - DeviceName: /dev/sda1
-          Ebs:
-            VolumeSize: 8
-            VolumeType: gp3
-            Encrypted: true
-            DeleteOnTermination: true
-      Tags:
-        - Key: Name
-          Value: !Sub '${NamePrefix}-prueba-b'
-        - Key: Integrante
-          Value: B
-        - Key: ManagedBy
-          Value: CloudFormation
+
 Outputs:
   FrontendUrl:
     Description: URL HTTP de laboratorio, sin login ni informacion sensible.
@@ -190,6 +138,3 @@ Outputs:
   PruebaIntegranteAId:
     Description: Nueva EC2 privada agregada por el integrante A.
     Value: !Ref PruebaIntegranteA
-  PruebaIntegranteBId:
-    Description: Nueva EC2 privada agregada por el integrante B.
-    Value: !Ref PruebaIntegranteB
