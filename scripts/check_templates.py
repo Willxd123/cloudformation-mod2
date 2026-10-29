@@ -47,6 +47,10 @@ for path in [ROOT / "bootstrap.yaml", ROOT / "main.yaml", *sorted((ROOT / "templ
         if resource["Type"] == "AWS::EC2::Instance":
             assert props["MetadataOptions"]["HttpTokens"] == "required"
             assert all(d["Ebs"]["Encrypted"] for d in props["BlockDeviceMappings"])
+            if name in {"Backend", "PruebaIntegranteA"}:
+                interface = props["NetworkInterfaces"][0]
+                assert interface["AssociatePublicIpAddress"] is False
+                assert interface["SubnetId"] in ({"Ref": "PrivateSubnetId"},)
         if resource["Type"] == "AWS::S3::Bucket":
             assert all(props["PublicAccessBlockConfiguration"].values())
             assert props["BucketEncryption"]
